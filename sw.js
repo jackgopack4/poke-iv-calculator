@@ -1,7 +1,8 @@
-const CACHE = 'iv-calc-v1';
+const CACHE = 'iv-calc-v2';
 const ASSETS = [
   './',
   './index.html',
+  './app.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
