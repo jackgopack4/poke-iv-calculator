@@ -585,6 +585,8 @@
 <script>
 // Global error handler - shows error in page if anything breaks
 window.addEventListener("error", function(e) {
+  // Ignore resource load failures (manifest, icons, sw.js) — not JS errors
+  if (e.target && e.target !== window) return;
   var banner = document.getElementById("err-banner");
   if (!banner) {
     banner = document.createElement("div");
