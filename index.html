@@ -407,6 +407,30 @@
     margin-top: 2px;
     font-family: var(--mono);
   }
+  .stat-cell .stat-detail.clickable {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .stat-cell .stat-detail.clickable:active { opacity: 0.7; }
+
+  .iv-tooltip {
+    position: fixed;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    z-index: 500;
+    max-width: 190px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    word-break: break-word;
+    pointer-events: none;
+  }
   .stat-cell.perfect { background: var(--good-soft); border-color: var(--good); }
   .stat-cell.perfect .stat-name, .stat-cell.perfect .stat-iv { color: var(--accent-ink); }
   .stat-cell.narrow { background: #fdf9ed; border-color: #e8d9a8; }
