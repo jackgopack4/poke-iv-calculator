@@ -384,24 +384,26 @@ function recompute() {
   }
 
   // Render per-stat cells
+  if (typeof ivTooltip !== "undefined") { ivTooltip.hidden = true; tooltipAnchor = null; }
   resultsEl.innerHTML = "";
   STATS.forEach(function(stat) {
-    const cell = document.createElement("div");
+    var cell = document.createElement("div");
     cell.className = "stat-cell";
-    const vals = [];
+    var vals = [];
     possible[stat].forEach(function(v) { vals.push(v); });
     vals.sort(function(a, b) { return a - b; });
 
-    let klass = "narrow";
-    let display = "";
-    let detail = "";
+    var klass = "narrow";
+    var display = "";
+    var detail = "";
+    var ivList = "";
 
     if (vals.length === 0) {
       klass = "bad";
       display = "\u2014";
       detail = "impossible";
     } else if (vals.length === 1) {
-      display = vals[0];
+      display = String(vals[0]);
       if (vals[0] === 31) klass = "perfect";
       else if (vals[0] === 0) klass = "bad";
       else klass = "narrow";
@@ -410,36 +412,29 @@ function recompute() {
       detail = "any";
       klass = "";
     } else {
-      const isRange = vals[vals.length - 1] - vals[0] === vals.length - 1;
-      if (isRange) {
-        display = vals[0] + "\u2013" + vals[vals.length - 1];
-        klass = "narrow";
-      } else {
-        display = vals.join(",");
-        if (display.length > 11) display = vals.length + " opts";
-        klass = "narrow";
-      }
+      display = vals[0] + "\u2013" + vals[vals.length - 1];
       detail = vals.length + " possible";
+      ivList = vals.join(", ");
+      klass = "narrow";
     }
     if (klass) cell.classList.add(klass);
 
-    const ivClass = String(display).length > 3 ? "multi" : (String(display).indexOf("\u2013") !== -1 ? "range" : "");
-
-    const nameDiv = document.createElement("div");
+    var nameDiv = document.createElement("div");
     nameDiv.className = "stat-name";
     nameDiv.textContent = STAT_LABELS[stat];
 
-    const ivDiv = document.createElement("div");
-    ivDiv.className = "stat-iv" + (ivClass ? " " + ivClass : "");
+    var ivDiv = document.createElement("div");
+    ivDiv.className = (vals.length > 1 && vals.length < 32) ? "stat-iv range" : "stat-iv";
     ivDiv.textContent = display;
 
     cell.appendChild(nameDiv);
     cell.appendChild(ivDiv);
 
     if (detail) {
-      const detailDiv = document.createElement("div");
-      detailDiv.className = "stat-detail";
+      var detailDiv = document.createElement("div");
+      detailDiv.className = "stat-detail" + (ivList ? " clickable" : "");
       detailDiv.textContent = detail;
+      if (ivList) detailDiv.setAttribute("data-ivs", ivList);
       cell.appendChild(detailDiv);
     }
 
@@ -462,6 +457,48 @@ function recompute() {
     }
   });
 }
+
+// ─── IV list tooltip ───
+var ivTooltip = document.createElement("div");
+ivTooltip.className = "iv-tooltip";
+ivTooltip.hidden = true;
+document.body.appendChild(ivTooltip);
+var tooltipAnchor = null;
+
+function showIVTooltip(anchor, text) {
+  ivTooltip.textContent = text;
+  ivTooltip.style.left = "-9999px";
+  ivTooltip.style.top = "0";
+  ivTooltip.hidden = false;
+  var tw = ivTooltip.offsetWidth;
+  var th = ivTooltip.offsetHeight;
+  var rect = anchor.getBoundingClientRect();
+  var left = rect.left + rect.width / 2 - tw / 2;
+  var top = rect.top - th - 8;
+  left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+  if (top < 8) top = rect.bottom + 8;
+  ivTooltip.style.left = left + "px";
+  ivTooltip.style.top = top + "px";
+}
+
+document.addEventListener("click", function(e) {
+  var det = null;
+  if (e.target && typeof e.target.closest === "function") {
+    det = e.target.closest(".stat-detail[data-ivs]");
+  }
+  if (det) {
+    if (!ivTooltip.hidden && tooltipAnchor === det) {
+      ivTooltip.hidden = true;
+      tooltipAnchor = null;
+    } else {
+      tooltipAnchor = det;
+      showIVTooltip(det, det.getAttribute("data-ivs"));
+    }
+  } else if (!ivTooltip.hidden) {
+    ivTooltip.hidden = true;
+    tooltipAnchor = null;
+  }
+});
 
 // Initial render
 renderTable();
