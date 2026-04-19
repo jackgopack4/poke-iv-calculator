@@ -11,14 +11,11 @@ window.addEventListener("error", function(e) {
   }
   banner.textContent = "JS error: " + e.message + " (line " + e.lineno + ")";
 });
-// ═══════════════════════════════════════════════════════════════════
-// GEN 5 BASE STATS (verified against Bulbapedia Gen V data)
-// ═══════════════════════════════════════════════════════════════════
-const POKEMON = {
-  bulbasaur: { name: "Bulbasaur", dex: 1,   hp: 45, atk: 49, def: 49, spa: 65, spd: 65, spe: 45 },
-  cyndaquil: { name: "Cyndaquil", dex: 155, hp: 39, atk: 52, def: 43, spa: 60, spd: 50, spe: 65 },
-  oshawott:  { name: "Oshawott",  dex: 501, hp: 55, atk: 55, def: 45, spa: 63, spd: 45, spe: 45 },
-};
+// POKEMON is defined in pokemon-data.js (loaded before this script).
+// Build a dex-order sorted list for the search UI.
+var POKEMON_LIST = Object.keys(POKEMON).sort(function(a, b) {
+  return POKEMON[a].dex - POKEMON[b].dex;
+});
 
 // Nature lookup: each nature maps to which stat is +10% and which is -10%.
 // Neutral natures have neither.
@@ -94,8 +91,8 @@ function intersect(a, b) {
 // ═══════════════════════════════════════════════════════════════════
 // UI STATE
 // ═══════════════════════════════════════════════════════════════════
-let state = {
-  species: "oshawott",
+var state = {
+  species: null,
   nature: "none",
   characteristic: "none",
   showEVs: false,
@@ -104,14 +101,90 @@ let state = {
   ],
 };
 
-// ─── Species chips ───
-document.getElementById("species-row").addEventListener("click", function(e) {
-  const chip = e.target.closest(".chip");
-  if (!chip) return;
-  document.querySelectorAll(".chip").forEach(function(c) { c.classList.remove("selected"); });
-  chip.classList.add("selected");
-  state.species = chip.dataset.species;
+// ─── Species search UI ───
+var speciesInput    = document.getElementById("species-input");
+var speciesDropdown = document.getElementById("species-dropdown");
+var speciesSelected = document.getElementById("species-selected");
+
+function dexPad(n) {
+  return "#" + String(n).padStart(3, "0");
+}
+
+function renderDropdown(matches) {
+  speciesDropdown.innerHTML = "";
+  if (matches.length === 0) {
+    speciesDropdown.hidden = true;
+    return;
+  }
+  matches.forEach(function(key) {
+    var mon = POKEMON[key];
+    var div = document.createElement("div");
+    div.className = "species-option";
+    div.setAttribute("data-key", key);
+    var dexSpan = document.createElement("span");
+    dexSpan.className = "opt-dex";
+    dexSpan.textContent = dexPad(mon.dex);
+    div.appendChild(dexSpan);
+    div.appendChild(document.createTextNode(mon.name));
+    speciesDropdown.appendChild(div);
+  });
+  speciesDropdown.hidden = false;
+}
+
+function selectSpecies(key) {
+  state.species = key;
+  speciesInput.value = "";
+  speciesDropdown.hidden = true;
+  var mon = POKEMON[key];
+  speciesSelected.innerHTML = "";
+  var dexSpan = document.createElement("span");
+  dexSpan.className = "sel-dex";
+  dexSpan.textContent = dexPad(mon.dex);
+  var nameSpan = document.createElement("span");
+  nameSpan.textContent = mon.name;
+  var clearBtn = document.createElement("button");
+  clearBtn.type = "button";
+  clearBtn.className = "sel-clear";
+  clearBtn.textContent = "\u00d7";
+  clearBtn.setAttribute("aria-label", "Clear selection");
+  clearBtn.addEventListener("click", function() {
+    state.species = null;
+    speciesSelected.hidden = true;
+    speciesInput.value = "";
+    speciesInput.focus();
+    recompute();
+  });
+  speciesSelected.appendChild(dexSpan);
+  speciesSelected.appendChild(nameSpan);
+  speciesSelected.appendChild(clearBtn);
+  speciesSelected.hidden = false;
   recompute();
+}
+
+speciesInput.addEventListener("input", function() {
+  var q = speciesInput.value.trim().toLowerCase();
+  if (q === "") { speciesDropdown.hidden = true; return; }
+  var isNum = /^\d+$/.test(q);
+  var matches = POKEMON_LIST.filter(function(key) {
+    var mon = POKEMON[key];
+    if (isNum) return String(mon.dex).startsWith(q);
+    return mon.name.toLowerCase().indexOf(q) !== -1;
+  }).slice(0, 50);
+  renderDropdown(matches);
+});
+
+speciesInput.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") { speciesDropdown.hidden = true; }
+});
+
+speciesInput.addEventListener("blur", function() {
+  setTimeout(function() { speciesDropdown.hidden = true; }, 180);
+});
+
+speciesDropdown.addEventListener("click", function(e) {
+  var opt = e.target.closest(".species-option");
+  if (!opt) return;
+  selectSpecies(opt.getAttribute("data-key"));
 });
 
 // ─── Nature & characteristic ───
@@ -236,9 +309,17 @@ document.getElementById("add-row").addEventListener("click", function() {
 // MAIN CALCULATION LOGIC
 // ═══════════════════════════════════════════════════════════════════
 function recompute() {
-  const mon = POKEMON[state.species];
   const statusEl = document.getElementById("status");
   const resultsEl = document.getElementById("stat-results");
+
+  if (!state.species) {
+    statusEl.className = "result-status idle";
+    statusEl.textContent = "Search for a Pokémon above to begin.";
+    resultsEl.innerHTML = "";
+    return;
+  }
+
+  const mon = POKEMON[state.species];
 
   const possible = {};
   STATS.forEach(function(s) {
