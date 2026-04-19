@@ -1,4 +1,4 @@
-const CACHE = 'iv-calc-v2';
+const CACHE = 'iv-calc-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,8 @@ const ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './icon-180.png'
+  './icon-180.png',
+  './favicon-32.png'
 ];
 
 self.addEventListener('install', e => {
