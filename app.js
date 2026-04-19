@@ -148,11 +148,8 @@ function selectSpecies(key) {
   clearBtn.textContent = "\u00d7";
   clearBtn.setAttribute("aria-label", "Clear selection");
   clearBtn.addEventListener("click", function() {
-    state.species = null;
-    speciesSelected.hidden = true;
-    speciesInput.value = "";
+    resetAll();
     speciesInput.focus();
-    recompute();
   });
   speciesSelected.appendChild(dexSpan);
   speciesSelected.appendChild(nameSpan);
@@ -186,6 +183,24 @@ speciesDropdown.addEventListener("click", function(e) {
   if (!opt) return;
   selectSpecies(opt.getAttribute("data-key"));
 });
+
+// ─── Reset ───
+function resetAll() {
+  state.species = null;
+  state.nature = "none";
+  state.characteristic = "none";
+  state.showEVs = false;
+  state.rows = [{ level: "", stats: {}, evs: {} }];
+  speciesSelected.hidden = true;
+  speciesInput.value = "";
+  speciesDropdown.hidden = true;
+  document.getElementById("nature").value = "none";
+  document.getElementById("characteristic").value = "none";
+  document.getElementById("ev-toggle").checked = false;
+  renderTable();
+  recompute();
+}
+document.getElementById("reset-btn").addEventListener("click", resetAll);
 
 // ─── Nature & characteristic ───
 document.getElementById("nature").addEventListener("change", function(e) {
@@ -383,6 +398,45 @@ function recompute() {
     }
   }
 
+  // Compute "next useful level" hints — the lowest level above currentMax where
+  // at least two candidate IVs would produce different observed stats, meaning
+  // entering that level's stats would narrow the set.
+  var maxLv = 0;
+  var evForHint = {};
+  state.rows.forEach(function(row) {
+    var lv = parseInt(row.level);
+    if (lv > maxLv) {
+      maxLv = lv;
+      STATS.forEach(function(s) {
+        evForHint[s] = state.showEVs ? (parseInt(row.evs[s]) || 0) : 0;
+      });
+    }
+  });
+
+  var nextUsefulLevel = {};
+  if (maxLv > 0 && !hasConflict) {
+    STATS.forEach(function(stat) {
+      var C = possible[stat];
+      if (C.size <= 1) { nextUsefulLevel[stat] = null; return; }
+      var base = mon[stat];
+      var nmod = natureModFor(stat, state.nature);
+      var ev = evForHint[stat] || 0;
+      var found = null;
+      var ivArr = [];
+      C.forEach(function(iv) { ivArr.push(iv); });
+      for (var lv = maxLv + 1; lv <= 100 && found === null; lv++) {
+        var statVals = new Set();
+        for (var i = 0; i < ivArr.length; i++) {
+          statVals.add(stat === "hp"
+            ? calcHP(base, ivArr[i], ev, lv)
+            : calcStat(base, ivArr[i], ev, lv, nmod));
+          if (statVals.size > 1) { found = lv; break; }
+        }
+      }
+      nextUsefulLevel[stat] = found;
+    });
+  }
+
   // Render per-stat cells
   if (typeof ivTooltip !== "undefined") { ivTooltip.hidden = true; tooltipAnchor = null; }
   resultsEl.innerHTML = "";
@@ -436,6 +490,14 @@ function recompute() {
       detailDiv.textContent = detail;
       if (ivList) detailDiv.setAttribute("data-ivs", ivList);
       cell.appendChild(detailDiv);
+    }
+
+    if (vals.length > 1 && vals.length < 32 && maxLv > 0 && !hasConflict) {
+      var hintDiv = document.createElement("div");
+      hintDiv.className = "stat-hint";
+      var nul = nextUsefulLevel[stat];
+      hintDiv.textContent = nul !== null ? "\u2191Lv\u00a0" + nul : "won\u2019t narrow";
+      cell.appendChild(hintDiv);
     }
 
     resultsEl.appendChild(cell);
