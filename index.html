@@ -91,45 +91,86 @@
     margin: 0 0 12px;
   }
 
-  /* ─── Species chips ─── */
-  .species-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  button.chip {
-    -webkit-appearance: none;
-    appearance: none;
-    background: var(--bg);
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    padding: 14px 10px;
-    text-align: center;
-    cursor: pointer;
+  /* ─── Species search ─── */
+  .species-search { position: relative; }
+  #species-input {
     font-family: var(--sans);
     font-size: 15px;
-    font-weight: 500;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
     color: var(--ink);
-    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-    -webkit-tap-highlight-color: transparent;
-    margin: 0;
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
   }
-  button.chip:hover { border-color: var(--accent); }
-  button.chip:focus { outline: none; }
-  button.chip.selected {
-    background: var(--accent) !important;
-    color: white !important;
-    border-color: var(--accent) !important;
+  #species-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
-  button.chip.selected .dex-num { color: white; opacity: 0.85; }
-  .chip .dex-num {
-    display: block;
-    font-size: 10px;
+  .species-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .species-option {
+    padding: 9px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .species-option:last-child { border-bottom: none; }
+  .species-option:active, .species-option:hover { background: var(--accent-soft); }
+  .species-option .opt-dex {
     font-family: var(--mono);
-    opacity: 0.7;
-    letter-spacing: 0.05em;
-    margin-bottom: 2px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    min-width: 32px;
   }
+  .species-selected {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent);
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .species-selected .sel-dex {
+    font-family: var(--mono);
+    font-size: 11px;
+    opacity: 0.8;
+  }
+  .species-selected .sel-clear {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+    opacity: 0.8;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .species-selected .sel-clear:hover { opacity: 1; }
 
   /* ─── Form fields ─── */
   .field-row {
@@ -426,17 +467,14 @@
 <!-- SPECIES -->
 <section>
   <div class="section-label">Species</div>
-  <div class="species-row" id="species-row">
-    <button type="button" class="chip" data-species="bulbasaur">
-      <span class="dex-num">#001</span>Bulbasaur
-    </button>
-    <button type="button" class="chip" data-species="cyndaquil">
-      <span class="dex-num">#155</span>Cyndaquil
-    </button>
-    <button type="button" class="chip selected" data-species="oshawott">
-      <span class="dex-num">#501</span>Oshawott
-    </button>
+  <div class="species-search">
+    <input type="text" id="species-input"
+           placeholder="Search by name or Dex #…"
+           autocomplete="off" autocorrect="off"
+           autocapitalize="off" spellcheck="false">
+    <div id="species-dropdown" class="species-dropdown" hidden></div>
   </div>
+  <div id="species-selected" class="species-selected" hidden></div>
 </section>
 
 <!-- NATURE & CHARACTERISTIC -->
@@ -584,6 +622,7 @@
   </details>
 </div>
 
+<script src="pokemon-data.js"></script>
 <script src="app.js"></script>
 
 

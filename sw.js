@@ -1,8 +1,9 @@
-const CACHE = 'iv-calc-v3';
+const CACHE = 'iv-calc-v4';
 const ASSETS = [
   './',
   './index.html',
   './app.js',
+  './pokemon-data.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
