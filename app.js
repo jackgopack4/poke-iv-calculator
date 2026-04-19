@@ -185,22 +185,27 @@ speciesDropdown.addEventListener("click", function(e) {
 });
 
 // ─── Reset ───
-function resetAll() {
-  state.species = null;
+function resetModifiers() {
   state.nature = "none";
   state.characteristic = "none";
   state.showEVs = false;
   state.rows = [{ level: "", stats: {}, evs: {} }];
-  speciesSelected.hidden = true;
-  speciesInput.value = "";
-  speciesDropdown.hidden = true;
   document.getElementById("nature").value = "none";
   document.getElementById("characteristic").value = "none";
   document.getElementById("ev-toggle").checked = false;
   renderTable();
   recompute();
 }
-document.getElementById("reset-btn").addEventListener("click", resetAll);
+
+function resetAll() {
+  state.species = null;
+  speciesSelected.hidden = true;
+  speciesInput.value = "";
+  speciesDropdown.hidden = true;
+  resetModifiers();
+}
+
+document.getElementById("reset-btn").addEventListener("click", resetModifiers);
 
 // ─── Nature & characteristic ───
 document.getElementById("nature").addEventListener("change", function(e) {
