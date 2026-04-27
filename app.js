@@ -50,6 +50,28 @@ const NATURES = {
 const STATS = ["hp", "atk", "def", "spa", "spd", "spe"];
 const STAT_LABELS = { hp: "HP", atk: "Atk", def: "Def", spa: "SpA", spd: "SpD", spe: "Spe" };
 
+var HP_TYPES = ["Fighting","Flying","Poison","Ground","Rock","Bug","Ghost","Steel",
+                "Fire","Water","Grass","Electric","Psychic","Ice","Dragon","Dark"];
+var HP_STAT_BITS = { hp:0, atk:1, def:2, spe:3, spa:4, spd:5 };
+
+function applyHPTypeFilter(possible, typeName) {
+  if (!typeName || typeName === "none") return;
+  var typeIndex = HP_TYPES.map(function(t) { return t.toLowerCase(); }).indexOf(typeName.toLowerCase());
+  if (typeIndex === -1) return;
+  var validNs = [];
+  for (var n = 0; n <= 63; n++) {
+    if (Math.floor(n * 15 / 63) === typeIndex) validNs.push(n);
+  }
+  STATS.forEach(function(stat) {
+    var bit = HP_STAT_BITS[stat];
+    var parityOk = [false, false];
+    validNs.forEach(function(n) { parityOk[(n >> bit) & 1] = true; });
+    var filtered = new Set();
+    possible[stat].forEach(function(iv) { if (parityOk[iv % 2]) filtered.add(iv); });
+    possible[stat] = filtered;
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // CORE GEN 5 MATH
 // ═══════════════════════════════════════════════════════════════════
@@ -95,6 +117,7 @@ var state = {
   species: null,
   nature: "none",
   characteristic: "none",
+  hiddenPower: "none",
   showEVs: false,
   rows: [
     { level: "", stats: {}, evs: {} }
@@ -188,10 +211,12 @@ speciesDropdown.addEventListener("click", function(e) {
 function resetModifiers() {
   state.nature = "none";
   state.characteristic = "none";
+  state.hiddenPower = "none";
   state.showEVs = false;
   state.rows = [{ level: "", stats: {}, evs: {} }];
   document.getElementById("nature").value = "none";
   document.getElementById("characteristic").value = "none";
+  document.getElementById("hidden-power").value = "none";
   document.getElementById("ev-toggle").checked = false;
   renderTable();
   recompute();
@@ -214,6 +239,10 @@ document.getElementById("nature").addEventListener("change", function(e) {
 });
 document.getElementById("characteristic").addEventListener("change", function(e) {
   state.characteristic = e.target.value;
+  recompute();
+});
+document.getElementById("hidden-power").addEventListener("change", function(e) {
+  state.hiddenPower = e.target.value;
   recompute();
 });
 
@@ -383,6 +412,9 @@ function recompute() {
     for (let v = lo; v <= 31; v += 5) charSet.add(v);
     possible[stat] = intersect(possible[stat], charSet);
   }
+
+  // Apply Hidden Power type filter if set
+  applyHPTypeFilter(possible, state.hiddenPower);
 
   // Detect conflicts
   STATS.forEach(function(s) { if (possible[s].size === 0) hasConflict = true; });

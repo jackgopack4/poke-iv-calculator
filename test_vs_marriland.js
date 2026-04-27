@@ -32,6 +32,26 @@ const NATURES = {
 
 const STATS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
 
+const HP_TYPES = ['Fighting','Flying','Poison','Ground','Rock','Bug','Ghost','Steel',
+                  'Fire','Water','Grass','Electric','Psychic','Ice','Dragon','Dark'];
+const HP_STAT_BITS = { hp:0, atk:1, def:2, spe:3, spa:4, spd:5 };
+
+function applyHPTypeFilter(possible, typeName) {
+  if (!typeName || typeName === 'none') return;
+  const typeIndex = HP_TYPES.map(t => t.toLowerCase()).indexOf(typeName.toLowerCase());
+  if (typeIndex === -1) return;
+  const validNs = [];
+  for (let n = 0; n <= 63; n++) {
+    if (Math.floor(n * 15 / 63) === typeIndex) validNs.push(n);
+  }
+  for (const stat of STATS) {
+    const bit = HP_STAT_BITS[stat];
+    const parityOk = [false, false];
+    for (const n of validNs) parityOk[(n >> bit) & 1] = true;
+    possible[stat] = possible[stat].filter(iv => parityOk[iv % 2]);
+  }
+}
+
 function calcHP(base, iv, ev, level) {
   return Math.floor(((2 * base + iv + Math.floor(ev / 4)) * level) / 100) + level + 10;
 }
@@ -61,7 +81,7 @@ function possibleIVs(stat, base, level, ev, natureMod, observed) {
 
 // Run our calculator given a species, nature, and array of {level, stats, evs} rows.
 // Returns { hp: [sorted ivs], atk: [...], ... }
-function ourCalculator(species, nature, rows) {
+function ourCalculator(species, nature, rows, hiddenPower) {
   const base = POKEMON[species];
   const possible = {};
   for (const stat of STATS) {
@@ -78,6 +98,7 @@ function ourCalculator(species, nature, rows) {
       possible[stat] = possible[stat].filter(iv => cands.includes(iv));
     }
   }
+  applyHPTypeFilter(possible, hiddenPower || 'none');
   return possible;
 }
 
@@ -86,7 +107,7 @@ function ourCalculator(species, nature, rows) {
 // Marriland uses different stat key names than we do.
 const MARRILAND_STAT_MAP = { hp: 'hp', atk: 'attack', def: 'defense', spa: 'spatk', spd: 'spdef', spe: 'speed' };
 
-function callMarrilandAPI(species, nature, rows) {
+function callMarrilandAPI(species, nature, rows, hiddenPower) {
   return new Promise((resolve, reject) => {
     const formRows = {};
     rows.forEach((row, i) => {
@@ -103,7 +124,7 @@ function callMarrilandAPI(species, nature, rows) {
       name: species,
       nature: nature === 'none' ? '' : nature,
       characteristic: 'none',
-      hidden_power: 'none',
+      hidden_power: (hiddenPower && hiddenPower !== 'none') ? hiddenPower.toLowerCase() : 'none',
       ...formRows,
     });
 
@@ -225,6 +246,30 @@ const TESTS = [
     knownIVs: { hp:24, atk:19, def:7, spa:11, spd:26, spe:31 },
     levels: [5, 20],
   },
+  // ── Hidden Power type filtering ────────────────────────────────────────────
+  {
+    // At lv50, spe IVs 28 and 29 produce the same Speed stat (both→64).
+    // Fighting requires spe even → only 28 survives. Same for spa (30 only, not 29/30).
+    label: 'Bulbasaur · hardy · Fighting HP · lv50 (parity filter narrows Spe + SpA)',
+    species: 'bulbasaur', nature: 'hardy', hiddenPower: 'fighting',
+    knownIVs: { hp:31, atk:30, def:30, spe:28, spa:30, spd:30 },
+    levels: [50],
+  },
+  {
+    // Dark requires N=63 — all six IVs must be odd.
+    // At lv50, hp 30/31 produce same stat; Dark filter resolves to 31 (odd only).
+    label: 'Bulbasaur · hardy · Dark HP · lv50 (all IVs must be odd)',
+    species: 'bulbasaur', nature: 'hardy', hiddenPower: 'dark',
+    knownIVs: { hp:31, atk:31, def:31, spe:31, spa:31, spd:31 },
+    levels: [50],
+  },
+  {
+    // Dragon requires spe/spa/spd to be odd (N=59–62, bits 3/4/5 always 1).
+    label: 'Cyndaquil · modest · Dragon HP · lv5+lv25 (Spe/SpA/SpD must be odd)',
+    species: 'cyndaquil', nature: 'modest', hiddenPower: 'dragon',
+    knownIVs: { hp:30, atk:29, def:28, spe:31, spa:31, spd:31 },
+    levels: [5, 25],
+  },
 ];
 
 // ─── Runner ───────────────────────────────────────────────────────────────────
@@ -255,7 +300,7 @@ async function main() {
     const rows = test.levels.map(lv => buildRow(test.species, test.nature, lv, test.knownIVs));
 
     // Our calculator
-    const ours = ourCalculator(test.species, test.nature, rows);
+    const ours = ourCalculator(test.species, test.nature, rows, test.hiddenPower || 'none');
 
     // Verify known IVs are in our results
     let ourPassed = true;
@@ -273,7 +318,7 @@ async function main() {
     if (marrilandAvailable) {
       try {
         await delay(300); // be polite
-        marrilandResult = await callMarrilandAPI(test.species, test.nature, rows);
+        marrilandResult = await callMarrilandAPI(test.species, test.nature, rows, test.hiddenPower || 'none');
         if (marrilandResult.error) {
           marrilandResult = null;
         } else {
