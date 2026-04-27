@@ -10,36 +10,42 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="favicon-32.png" sizes="32x32">
 <link rel="icon" href="icon-192.png" sizes="192x192">
-<meta name="theme-color" content="#2e7d6b">
+<meta name="theme-color" content="#111318">
 <title>Gen 5 IV Calculator</title>
 <style>
   /* ─── Reset & base ─── */
   *, *::before, *::after { box-sizing: border-box; }
   [hidden] { display: none !important; }
   :root {
-    --bg: #f7f4ee;
-    --bg-card: #ffffff;
-    --ink: #1a1f2e;
-    --ink-soft: #5a6378;
-    --ink-faint: #8b92a3;
-    --line: #e5ddd0;
-    --line-strong: #cfc5b3;
-    --accent: #2e7d6b;
-    --accent-soft: #d4e8e2;
-    --accent-ink: #1a4f45;
-    --warn: #b25f2a;
-    --warn-soft: #f6e3d4;
-    --bad: #a83232;
-    --bad-soft: #f6d7d7;
-    --good: #2e7d6b;
-    --good-soft: #d4e8e2;
+    --bg: #111318;
+    --bg-card: #1c1f28;
+    --ink: #e8ecf0;
+    --ink-soft: #8899aa;
+    --ink-faint: #4a5566;
+    --line: #262c38;
+    --line-strong: #333d50;
+    --accent: #2ec8a8;
+    --accent-soft: #0d2820;
+    --accent-ink: #50e8cc;
+    --warn: #e8a830;
+    --warn-soft: #281e08;
+    --bad: #e85858;
+    --bad-soft: #280a0a;
+    --good: #2ec8a8;
+    --good-soft: #0d2820;
     --mono: ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
     --serif: "New York", "Iowan Old Style", "Palatino", "Cambria", "Book Antiqua", Georgia, serif;
     --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
   }
+  html {
+    background: var(--bg);
+    background-image:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
   html, body {
     margin: 0; padding: 0;
-    background: var(--bg);
     color: var(--ink);
     font-family: var(--sans);
     font-size: 16px;
@@ -47,6 +53,7 @@
     -webkit-text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
   }
+  body { background: transparent; }
   body {
     padding: 20px 16px 60px;
     padding-bottom: calc(60px + env(safe-area-inset-bottom));
@@ -57,38 +64,43 @@
   /* ─── Header ─── */
   header { margin-bottom: 28px; }
   h1 {
-    font-family: var(--serif);
-    font-weight: 500;
-    font-size: 32px;
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 28px;
     line-height: 1.1;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     margin: 0 0 6px;
+    color: var(--ink);
   }
   h1 em {
-    font-style: italic;
+    font-style: normal;
     color: var(--accent);
   }
   .subtitle {
     font-size: 13px;
     color: var(--ink-soft);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 11px;
   }
 
   /* ─── Sections ─── */
   section {
     background: var(--bg-card);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-top: 2px solid var(--accent);
+    border-radius: 4px;
     padding: 18px 18px 20px;
     margin-bottom: 14px;
   }
   .section-label {
-    font-family: var(--serif);
-    font-weight: 500;
-    font-size: 13px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--ink-soft);
+    letter-spacing: 0.14em;
+    color: var(--accent);
     margin: 0 0 12px;
   }
 
@@ -135,7 +147,7 @@
     border-bottom: 1px solid var(--line);
   }
   .species-option:last-child { border-bottom: none; }
-  .species-option:active, .species-option:hover { background: var(--accent-soft); }
+  .species-option:active, .species-option:hover { background: var(--accent-soft); color: var(--accent-ink); }
   .species-option .opt-dex {
     font-family: var(--mono);
     font-size: 11px;
@@ -147,12 +159,14 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: var(--accent);
-    color: white;
-    border-radius: 8px;
+    background: #1a3a50;
+    border: 1px solid #4ab8e8;
+    color: #e8f8ff;
+    border-radius: 4px;
     padding: 10px 14px;
     font-size: 15px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
   .species-selected .sel-dex {
     font-family: var(--mono);
@@ -163,7 +177,7 @@
     margin-left: auto;
     background: transparent;
     border: none;
-    color: white;
+    color: #4ab8e8;
     font-size: 20px;
     line-height: 1;
     cursor: pointer;
@@ -206,7 +220,7 @@
     width: 100%;
   }
   select {
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%235a6378' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%238899aa' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
     padding-right: 32px;
@@ -311,13 +325,13 @@
     background: var(--bg);
   }
   .lvltbl input:focus {
-    background: white;
+    background: var(--bg-card);
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-soft);
   }
   .lvltbl .ev-input {
-    background: #faf6ec;
-    border-color: #e8dfc9;
+    background: #1a1600;
+    border-color: #3a3010;
     color: var(--warn);
   }
   .lvltbl .lvl-input {
@@ -375,7 +389,7 @@
     border-radius: 4px;
     -webkit-tap-highlight-color: transparent;
   }
-  .reset-btn:hover { color: var(--ink); background: var(--bg); }
+  .reset-btn:hover { color: var(--ink); background: var(--line); }
   .reset-btn:active { opacity: 0.6; }
 
   /* ─── Results ─── */
@@ -463,7 +477,7 @@
   }
   .stat-cell.perfect { background: var(--good-soft); border-color: var(--good); }
   .stat-cell.perfect .stat-name, .stat-cell.perfect .stat-iv { color: var(--accent-ink); }
-  .stat-cell.narrow { background: #fdf9ed; border-color: #e8d9a8; }
+  .stat-cell.narrow { background: #1a1800; border-color: #3a3008; }
   .stat-cell.bad { background: var(--bad-soft); border-color: var(--bad); }
   .stat-cell.bad .stat-iv { color: var(--bad); }
 
@@ -515,7 +529,7 @@
 
 <header>
   <h1>Gen 5 <em>IV Calculator</em></h1>
-  <div class="subtitle">Offline · Works on any device · Black / White / B2W2</div>
+  <div class="subtitle">Black · White · B2W2 &nbsp;·&nbsp; Offline</div>
 </header>
 
 <!-- SPECIES -->

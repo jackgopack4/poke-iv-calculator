@@ -1,4 +1,4 @@
-const CACHE = 'iv-calc-v4';
+const CACHE = 'iv-calc-v5';
 const ASSETS = [
   './',
   './index.html',
