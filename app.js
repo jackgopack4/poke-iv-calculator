@@ -319,11 +319,17 @@ function renderTable() {
 }
 
 // ─── Add row button ───
-document.getElementById("add-row").addEventListener("click", function() {
-  state.rows.push({ level: "", stats: {}, evs: {} });
+function addRow() {
+  var lastRow = state.rows[state.rows.length - 1];
+  var newEvs = {};
+  if (state.showEVs && lastRow) {
+    STATS.forEach(function(s) { newEvs[s] = lastRow.evs[s] || 0; });
+  }
+  state.rows.push({ level: "", stats: {}, evs: newEvs });
   renderTable();
   recompute();
-});
+}
+document.getElementById("add-row").addEventListener("click", addRow);
 
 // ═══════════════════════════════════════════════════════════════════
 // MAIN CALCULATION LOGIC
